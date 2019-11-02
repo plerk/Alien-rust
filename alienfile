@@ -1,0 +1,38 @@
+use alienfile;
+
+plugin 'Probe::CommandLine' => (
+  command => 'cargo',
+  args    => '--version',
+);
+
+plugin 'Probe::CommandLine' => (
+  command   => 'rustc',
+  args      => '--version',
+  secondary => 1,
+);
+
+share {
+  plugin Download => (
+    url => 'https://sh.rustup.rs',
+  );
+  extract [
+    'cp %{.install.download} rustup-init.sh',
+  ];
+  build [
+    'env RUSTUP_HOME=%{.install.prefix}/rustup CARGO_HOME=%{.install.prefix}/cargo sh rustup-init.sh --no-modify-path -y --profile minimal',
+    (map { "rmdir %{.install.prefix}/rustup/$_" } qw( downloads tmp )),
+    (map { "rm -rf %{.install.prefix}/rustup/toolchains/*/$_" } qw( etc/bash_completion.d share/doc share/man share/zsh ))
+  ];
+
+  gather sub {
+    my($build) = @_;
+    $build->runtime_prop->{version} = 'unknown';
+  };
+};
+
+sys {
+  gather sub {
+    my($build) = @_;
+    $build->runtime_prop->{version} = 'unknown';
+  };
+};
